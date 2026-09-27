@@ -1,0 +1,22 @@
+services:
+  # 1. okDriver Frontend & Node.js WebSocket Gateway
+  - type: web
+    name: okdriver-command-center
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: NODE_ENV
+        value: production
+
+  # 2. okDriver Django Authentication & Database API
+  - type: web
+    name: okdriver-django-backend
+    env: python
+    buildCommand: pip install -r requirements.txt && python manage.py migrate
+    startCommand: gunicorn okdriver_django.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.8

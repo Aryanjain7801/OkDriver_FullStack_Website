@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>okDriver - CCTV Monitoring & AI Video Analytics Platform</title>
+  
+  <!-- Leaflet CSS for GIS Mapping -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- Main Custom Dark Theme Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <style>
+    /* Pulse beacon for alert camera pin */
+    .pulse-beacon {
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      right: -10px;
+      bottom: -10px;
+      border-radius: 50%;
+      border: 3px solid #ef4444;
+      animation: beacon-grow 1.5s infinite ease-out;
+      pointer-events: none;
+    }
+    @keyframes beacon-grow {
+      0% { transform: scale(0.6); opacity: 1; }
+      100% { transform: scale(1.8); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Left Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="brand-section">
+      <div class="brand-logo-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+      </div>
+      <div class="brand-text-container">
+        <span class="brand-title">okDriver</span>
+        <span class="brand-subtitle">Smarter Roads. Safer Tomorrow.</span>
+      </div>
+    </div>
+
+    <nav class="nav-menu">
+      <a class="nav-item active" data-view="dashboard">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </span>
+        <span>Dashboard</span>
+      </a>
+
+      <a class="nav-item" data-view="cameras">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg>
+        </span>
+        <span>Camera Registry</span>
+      </a>
+
+      <a class="nav-item" data-view="monitoring">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+        </span>
+        <span>Live Monitoring</span>
+      </a>
+
+      <a class="nav-item" data-view="alerts">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        </span>
+        <span>Alerts</span>
+        <span class="nav-badge" id="nav-alert-badge">3</span>
+      </a>
+
+      <a class="nav-item" data-view="watchlist">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </span>
+        <span>Watchlist</span>
+      </a>
+
+      <a class="nav-item" data-view="analytics">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        </span>
+        <span>Analytics</span>
+      </a>
+
+      <a class="nav-item" data-view="maps">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+        </span>
+        <span>Maps</span>
+      </a>
+
+      <a class="nav-item" data-view="reports">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </span>
+        <span>Reports</span>
+      </a>
+
+      <a class="nav-item" data-view="settings">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </span>
+        <span>Settings & Simulator</span>
+      </a>
+
+      <a class="nav-item" style="color:#f87171;" href="login.html" onclick="event.preventDefault(); window.app.logout();" title="Sign out of system">
+        <span class="icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </span>
+        <span>Sign Out</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="system-status-indicator">
+        <span class="pulse-dot" id="sys-status-dot"></span>
+        <span id="sys-status-text">System Online</span>
+      </div>
+      <span>v1.0.0</span>
+    </div>
+  </aside>
+
+  <!-- Main Application Wrapper -->
+  <main class="main-wrapper">
+    <!-- Top Header -->
+    <header class="top-header">
+      <div class="header-search">
+        <span class="search-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="text" id="global-search-input" placeholder="Search cameras, vehicle number, person, location..." autocomplete="off">
+      </div>
+
+      <div class="header-actions">
+        <div class="live-clock-badge" id="header-live-clock">
+          24 Apr 2026 14:32:17
+        </div>
+
+        <button class="action-icon-btn" onclick="window.app.switchView('alerts')" title="Active Alerts">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+          <span class="badge-count" id="header-bell-badge">3</span>
+        </button>
+
+        <!-- User Profile Button with Sign Out Direct Action -->
+        <div class="user-profile-btn" onclick="window.location.href='login.html'" title="Switch Account / Sign In / Register">
+          <div class="user-avatar" id="header-user-avatar">AD</div>
+          <span class="user-name" id="header-user-name">Admin</span>
+        </div>
+
+        <button class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; border-color: rgba(239, 68, 68, 0.4); color: #f87171;" onclick="window.app.logout()" title="Sign Out">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>Sign Out</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Scrollable Content Views -->
+    <div class="content-area">
+
+      <!-- ============================================== -->
+      <!-- VIEW 1: DASHBOARD (Exact Match with Image Mockup) -->
+      <!-- ============================================== -->
+      <div class="view-panel active" id="view-dashboard">
+        <div class="page-header-row">
+          <div>
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Real-time monitoring and AI-powered insights</p>
+          </div>
+          <div>
+            <button class="btn btn-secondary" onclick="window.app.simulateWatchlistTrigger()">
+              ⚡ Trigger ANPR Match
+            </button>
+            <button class="btn btn-primary" onclick="window.app.openOnboardModal()">
+              + Onboard Camera
+            </button>
+          </div>
+        </div>
+
+        <!-- 6 KPI Top Summary Cards -->
+        <div class="kpi-grid">
+          <!-- Total Cameras -->
+          <div class="kpi-card">
+            <div class="kpi-icon-wrap blue">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-label">Total Cameras</span>
+              <span class="kpi-value" id="kpi-total-cameras">48</span>
+              <span class="kpi-subtext">
+                <span class="dot-offline">●</span> 2 Offline &nbsp;
+                <span class="dot-degraded">●</span> 1 Degraded
+              </span>
+            </div>
+          </div>
+
+          <!-- Online -->
+          <div class="kpi-card">
+            <div class="kpi-icon-wrap green">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-label">Online</span>
+              <span class="kpi-value" id="kpi-online-cameras">45</span>
+              <span class="kpi-subtext badge-trend-good">93.75%</span>
+            </div>
+          </div>
+
+          <!-- Offline -->
+          <div class="kpi-card">
+            <div class="kpi-icon-wrap red">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-label">Offline</span>
+              <span class="kpi-value" id="kpi-offline-cameras">2</span>
+              <span class="kpi-subtext badge-trend-up">4.17%</span>
+            </div>
+          </div>
+
+          <!-- Degraded -->
+          <div class="kpi-card">
+            <div class="kpi-icon-wrap amber">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-label">Degraded</span>
+              <span class="kpi-value" id="kpi-degraded-cameras">1</span>
+              <span class="kpi-subtext" style="color:#f59e0b;">2.08%</span>
+            </div>
+          </div>
+
+          <!-- Active Alerts -->
+          <div class="kpi-card">
+            <div class="kpi-icon-wrap red">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-label">Active Alerts</span>
+              <span class="kpi-value" id="kpi-active-alerts">5</span>
+              <span class="kpi-subtext badge-trend-up">↑ 2 new</span>
+            </div>
+          </div>
+
+          <!-- Recent Detections -->
+          <div class="kpi-card">
+            <div class="kpi-icon-wrap blue">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M11 8v6"/><path d="M8 11h6"/></svg>
+            </div>
+            <div class="kpi-info">
+              <span class="kpi-label">Recent Detections</span>
+              <span class="kpi-value" id="kpi-recent-detections">12</span>
+              <span class="kpi-subtext badge-trend-up">↑ 4 new</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Middle Grid (Live Feeds, GIS Map, Recent Alerts) -->
+        <div class="middle-grid">
+          <!-- 1. Live Camera Feeds (2x2 Grid) -->
+          <div class="dashboard-card">
+            <div class="card-header-bar">
+              <div class="card-title-group">
+                <span class="pulse-dot"></span>
+                <span class="card-title">Live Camera Feeds</span>
+              </div>
+              <a class="card-view-all-link" onclick="window.app.switchView('monitoring')">View All →</a>
+            </div>
+
+            <div class="camera-feeds-grid">
+              <!-- Feed 1: C001 Traffic Junction -->
+              <div class="camera-feed-box" onclick="window.app.openCameraModal('C001')">
+                <canvas id="feed-c001" class="camera-canvas"></canvas>
+                <div class="feed-header-overlay">
+                  <div class="feed-rec-badge"><span class="rec-dot"></span> LIVE</div>
+                  <div class="feed-fps-badge">30 FPS</div>
+                </div>
+                <div class="feed-info-footer">
+                  <span class="feed-cam-name">C001 - Traffic Junction (Ahmedabad)</span>
+                  <span class="status-pill online">● Online</span>
+                </div>
+              </div>
+
+              <!-- Feed 2: C002 RTO Checkpoint -->
+              <div class="camera-feed-box" onclick="window.app.openCameraModal('C002')">
+                <canvas id="feed-c002" class="camera-canvas"></canvas>
+                <div class="feed-header-overlay">
+                  <div class="feed-rec-badge"><span class="rec-dot"></span> LIVE</div>
+                  <div class="feed-fps-badge">30 FPS</div>
+                </div>
+                <div class="feed-info-footer">
+                  <span class="feed-cam-name">C002 - RTO Checkpoint</span>
+                  <span class="status-pill online">● Online</span>
+                </div>
+              </div>
+
+              <!-- Feed 3: C003 City Center -->
+              <div class="camera-feed-box" onclick="window.app.openCameraModal('C003')">
+                <canvas id="feed-c003" class="camera-canvas"></canvas>
+                <div class="feed-header-overlay">
+                  <div class="feed-rec-badge"><span class="rec-dot"></span> LIVE</div>
+                  <div class="feed-fps-badge">15 FPS</div>
+                </div>
+                <div class="feed-info-footer">
+                  <span class="feed-cam-name">C003 - City Center</span>
+                  <span class="status-pill degraded">● Degraded</span>
+                </div>
+              </div>
+
+              <!-- Feed 4: C004 Highway (Offline) -->
+              <div class="camera-feed-box" onclick="window.app.openCameraModal('C004')">
+                <canvas id="feed-c004" class="camera-canvas"></canvas>
+                <div class="feed-header-overlay">
+                  <div class="feed-rec-badge" style="color:#ef4444;"><span class="rec-dot"></span> OFFLINE</div>
+                  <div class="feed-fps-badge">0 FPS</div>
+                </div>
+                <div class="feed-info-footer">
+                  <span class="feed-cam-name">C004 - Highway</span>
+                  <span class="status-pill offline">● Offline</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. Camera Locations & Vehicle Movement (GIS Map) -->
+          <div class="dashboard-card">
+            <div class="card-header-bar">
+              <span class="card-title">Camera Locations & Vehicle Movement</span>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button class="btn btn-secondary" style="padding:2px 8px; font-size:11px;" onclick="window.app.predictTacticalRoute()">🧠 AI Intercept</button>
+                <a class="card-view-all-link" onclick="window.app.switchView('maps')">Full Map →</a>
+              </div>
+            </div>
+
+            <div class="map-container-wrap">
+              <div id="leaflet-map"></div>
+
+              <!-- Floating Stepper Card over Map (Matching Screenshot) -->
+              <div class="map-floating-panel">
+                <div class="floating-panel-header">
+                  <div class="vehicle-identifier-badge">
+                    <span class="car-icon">🚘</span>
+                    <span>Vehicle: GJ01XX0001</span>
+                  </div>
+                  <a href="#" onclick="window.app.predictTacticalRoute(); return false;" style="font-size:0.75rem; color:#3b82f6; text-decoration:none; font-weight:600;">View Details</a>
+                </div>
+
+                <div class="timeline-stepper">
+                  <div class="step-node">
+                    <span class="step-dot"></span>
+                    <span>10:02</span>
+                    <span style="font-size:0.68rem; color:#94a3b8;">(C001)</span>
+                  </div>
+                  <span class="step-arrow">→</span>
+                  <div class="step-node">
+                    <span class="step-dot"></span>
+                    <span>10:18</span>
+                    <span style="font-size:0.68rem; color:#94a3b8;">(C002)</span>
+                  </div>
+                  <span class="step-arrow">→</span>
+                  <div class="step-node">
+                    <span class="step-dot" style="background:#ef4444;"></span>
+                    <span>10:41</span>
+                    <span style="font-size:0.68rem; color:#94a3b8;">(C004)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Recent Alerts -->
+          <div class="dashboard-card">
+            <div class="card-header-bar">
+              <span class="card-title">Recent Alerts</span>
+              <a class="card-view-all-link" onclick="window.app.switchView('alerts')">View All →</a>
+            </div>
+
+            <div class="alerts-list-scroll" id="dashboard-recent-alerts">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Grid (Camera Registry Table, System Stats, Watchlist Matches) -->
+        <div class="bottom-grid">
+          <!-- 1. Camera Registry Table -->
+          <div class="dashboard-card">
+            <div class="card-header-bar">
+              <span class="card-title">Camera Registry</span>
+              <a class="card-view-all-link" onclick="window.app.switchView('cameras')">View All →</a>
+            </div>
+
+            <div class="camera-table-wrap">
+              <table class="mini-table">
+                <thead>
+                  <tr>
+                    <th>Camera ID</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Location</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Last Heartbeat</th>
+                  </tr>
+                </thead>
+                <tbody id="mini-camera-tbody">
+                  <!-- Populated dynamically via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 2. System Statistics -->
+          <div class="dashboard-card">
+            <div class="card-header-bar">
+              <span class="card-title">System Statistics</span>
+              <select style="background:transparent; border:none; color:var(--text-secondary); font-size:0.75rem; outline:none; cursor:pointer;">
+                <option value="24h">Last 24 hours ▾</option>
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+              </select>
+            </div>
+
+            <div class="stats-2x2-grid">
+              <!-- Metric 1 -->
+              <div class="stat-metric-box">
+                <div class="stat-metric-header">
+                  <span class="stat-metric-name">Total Events</span>
+                  <div class="stat-metric-icon blue">📁</div>
+                </div>
+                <div class="stat-metric-number" id="stat-total-events">1,248</div>
+                <div class="stat-trend-tag trend-up-green">↑ 12%</div>
+              </div>
+
+              <!-- Metric 2 -->
+              <div class="stat-metric-box">
+                <div class="stat-metric-header">
+                  <span class="stat-metric-name">AI Detections</span>
+                  <div class="stat-metric-icon cyan">⚡</div>
+                </div>
+                <div class="stat-metric-number" id="stat-ai-detections">892</div>
+                <div class="stat-trend-tag trend-up-green">↑ 18%</div>
+              </div>
+
+              <!-- Metric 3 -->
+              <div class="stat-metric-box">
+                <div class="stat-metric-header">
+                  <span class="stat-metric-name">Alerts Generated</span>
+                  <div class="stat-metric-icon red">🚨</div>
+                </div>
+                <div class="stat-metric-number" id="stat-alerts-gen">32</div>
+                <div class="stat-trend-tag trend-up-red">↑ 6%</div>
+              </div>
+
+              <!-- Metric 4 -->
+              <div class="stat-metric-box">
+                <div class="stat-metric-header">
+                  <span class="stat-metric-name">Avg. Response Time</span>
+                  <div class="stat-metric-icon purple">⏱️</div>
+                </div>
+                <div class="stat-metric-number" id="stat-avg-resp">28s</div>
+                <div class="stat-trend-tag trend-down-green">↓ 22%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Watchlist Matches -->
+          <div class="dashboard-card">
+            <div class="card-header-bar">
+              <span class="card-title">Watchlist Matches</span>
+              <a class="card-view-all-link" onclick="window.app.switchView('watchlist')">View All →</a>
+            </div>
+
+            <div class="watchlist-matches-list" id="dashboard-watchlist-matches">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW 2: CAMERA REGISTRY (Full Management)      -->
+      <!-- ============================================== -->
+      <div class="view-panel" id="view-cameras">
+        <div class="page-header-row">
+          <div>
+            <h1 class="page-title">Camera Registry & Onboarding</h1>
+            <p class="page-subtitle">Centralized registry supporting manual and API-based camera ingestion</p>
+          </div>
+          <div>
+            <button class="btn btn-primary" onclick="window.app.openOnboardModal()">
+              + Onboard Camera Source
+            </button>
+          </div>
+        </div>
+
+        <div class="dashboard-card" style="padding:1rem;">
+          <div style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap;">
+            <input type="text" id="camera-filter-search" class="form-input" style="flex:1; min-width:240px;" placeholder="Filter by Camera ID, Name, or Location..." oninput="window.app.filterCameras()">
+            <select id="camera-filter-dept" class="form-select" style="width:180px;" onchange="window.app.filterCameras()">
+              <option value="">All Departments</option>
+              <option value="Traffic Police">Traffic Police</option>
+              <option value="City Police">City Police</option>
+              <option value="RTO">RTO Checkpoints</option>
+              <option value="Highway Police">Highway Police</option>
+              <option value="Railways">Railways</option>
+            </select>
+            <select id="camera-filter-status" class="form-select" style="width:140px;" onchange="window.app.filterCameras()">
+              <option value="">All Statuses</option>
+              <option value="Online">Online</option>
+              <option value="Degraded">Degraded</option>
+              <option value="Offline">Offline</option>
+            </select>
+          </div>
+
+          <table class="mini-table">
+            <thead>
+              <tr>
+                <th>Camera ID</th>
+                <th>Name</th>
+                <th>Department</th>
+                <th>Zone</th>
+                <th>Status</th>
+                <th>Protocol</th>
+                <th>Resolution</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="full-camera-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW 3: LIVE MONITORING (Multi-Matrix Wall)    -->
+      <!-- ============================================== -->
+      <div class="view-panel" id="view-monitoring">
+        <div class="page-header-row">
+          <div>
+            <h1 class="page-title">Unified Live Monitoring Wall</h1>
+            <p class="page-subtitle">Low-latency surveillance feeds with real-time AI bounding box overlays</p>
+          </div>
+          <div style="display:flex; gap:0.5rem;">
+            <button class="btn btn-secondary" onclick="window.app.renderMonitoringWall()">Refresh Feeds</button>
+          </div>
+        </div>
+
+        <div class="dashboard-card" style="padding:1rem;">
+          <div id="monitoring-wall-grid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem;"></div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW 4: ALERTS MANAGEMENT                     -->
+      <!-- ============================================== -->
+      <div class="view-panel" id="view-alerts">
+        <div class="page-header-row">
+          <div>
+            <h1 class="page-title">Real-Time Alerts & Incident Dispatch</h1>
+            <p class="page-subtitle">Acknowledge, resolve, and audit automated ANPR and perimeter alarms</p>
+          </div>
+          <div>
+            <button class="btn btn-secondary" onclick="window.app.simulateWatchlistTrigger()">+ Simulate Incident Alert</button>
+          </div>
+        </div>
+
+        <div class="dashboard-card" style="padding:1.25rem;">
+          <div id="full-alerts-list" style="display:flex; flex-direction:column; gap:0.75rem;"></div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW 5: WATCHLIST MANAGEMENT                  -->
+      <!-- ============================================== -->
+      <div class="view-panel" id="view-watchlist">
+        <div class="page-header-row">
+          <div>
+            <h1 class="page-title">Watchlist Database</h1>
+            <p class="page-subtitle">Blacklisted vehicles, stolen plates, wanted and missing persons database</p>
+          </div>
+          <div>
+            <button class="btn btn-primary" onclick="window.app.openWatchlistModal()">+ Add Watchlist Record</button>
+          </div>
+        </div>
+
+        <div class="dashboard-card" style="padding:1.25rem;">
+          <div style="display:flex; gap:1rem; margin-bottom:1rem; flex-wrap:wrap;">
+            <input type="text" id="watchlist-filter-search" class="form-input" style="flex:1; min-width:240px;" placeholder="Search vehicle plate, wanted entity, case description..." oninput="window.app.filterWatchlist()">
+            <select id="watchlist-filter-category" class="form-select" style="width:200px;" onchange="window.app.filterWatchlist()">
+              <option value="">All Categories</option>
+              <option value="Blacklisted Vehicle">Blacklisted Vehicle</option>
+              <option value="Stolen Vehicle">Stolen Vehicle</option>
+              <option value="Wanted Person">Wanted Person</option>
+              <option value="Missing Person">Missing Person</option>
+            </select>
+          </div>
+
+          <table class="mini-table">
+            <thead>
+              <tr>
+                <th>Identifier / Plate</th>
+                <th>Category</th>
+                <th>Priority</th>
+                <th>Case Description</th>
+                <th>Registered Authority</th>
+                <th>Date Added</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="watchlist-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW 6: SYSTEM ANALYTICS (Exact Mockup Match) -->
+      <!-- ============================================== -->
+      <div class="view-panel" id="view-analytics">
+        <!-- Page Header -->
+        <div class="page-header-row">
+          <div>
+            <h1 class="page-title">System Analytics</h1>
+            <p class="page-subtitle">AI Detection and Traffic Metrics</p>
+          </div>
+          <div>
+            <div style="background:var(--bg-card); border:1px solid var(--border-color); border-radius:8px; padding:0.45rem 1rem; color:#cbd5e1; font-size:0.82rem; font-weight:600; display:flex; align-items:center; gap:6px; cursor:pointer;">
+              <span>Last 30 Days</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3 KPI Metric Cards -->
+        <div class="analytics-kpi-grid">
+          <!-- Card 1: Total Detections -->
+          <div class="analytics-kpi-card">
+            <div class="analytics-card-top">
+              <div class="analytics-icon-wrap blue">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              </div>
+              <div class="analytics-trend-pill up-green">↗ +12.5%</div>
+            </div>
+            <div>
+              <div class="analytics-kpi-label">Total Detections</div>
+              <div class="analytics-kpi-val" id="analytics-val-detections">124,592</div>
+            </div>
+          </div>
+
+          <!-- Card 2: Critical Alerts -->
+          <div class="analytics-kpi-card">
+            <div class="analytics-card-top">
+              <div class="analytics-icon-wrap red">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="12" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="12" rx="1"/><rect x="17" y="4" width="4" height="16" rx="1"/></svg>
+              </div>
+              <div class="analytics-trend-pill down-red">↘ -3.2%</div>
+            </div>
+            <div>
+              <div class="analytics-kpi-label">Critical Alerts</div>
+              <div class="analytics-kpi-val" id="analytics-val-alerts">1,843</div>
+            </div>
+          </div>
+
+          <!-- Card 3: Unique Vehicles (ANPR) -->
+          <div class="analytics-kpi-card">
+            <div class="analytics-card-top">
+              <div class="analytics-icon-wrap green">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div class="analytics-trend-pill up-green">↗ +5.1%</div>
+            </div>
+            <div>
+              <div class="analytics-kpi-label">Unique Vehicles (ANPR)</div>
+              <div class="analytics-kpi-val" id="analytics-val-vehicles">45,910</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts Grid (Traffic Flow & Alert Distribution) -->
+        <div class="analytics-charts-grid">
+          <!-- Left: Traffic Flow by Hour -->
+          <div class="dashboard-card" style="padding:1.35rem 1.5rem;">
+            <div class="card-header-bar" style="margin-bottom:0.5rem;">
+              <span class="card-title">Traffic Flow by Hour</span>
+            </div>
+
+            <div class="traffic-bars-container" id="analytics-traffic-bars">
+              <!-- Hourly Bars (12 data intervals) -->
+              <div class="traffic-bar-col"><div class="traffic-bar-fill" style="height: 42%;" title="00:00 - 4,200 vehicles"></div></div>
+              <div class="traffic-bar-col"><div class="traffic-bar-fill" style="height: 30%;" title="02:00 - 3,000 vehicles"></div></div>
+              <div class="traffic-bar-col"><div class="traffic-bar-fill" style="height: 18%;" title="04:00 - 1,800 vehicles"></div></div>
+              <div class="traffic-bar-col"><div class="traffic-bar-fill" style="height: 24%;" title="06:00 - 2,400 vehicles"></div></div>
+              <div class="traffic-bar-col"><div class="traffic-bar-fill" style="height: 38%;" title="08:00 - 3,800 vehicles"></div></div>
+              <div class="traffic-bar-col"><div class="traffic-bar-fill" style="height: 64%;" title="10:00 - 6,400 vehicles"></div></div>
+              <div class="traffic-bar-col"><div class="traffic-bar-fill" style="height: 82%;" title="12:00 - 8,200 vehicles"></div></div>
+              <div class="traffic-bar-col"><div class="traffic-bar-fill" style="height: 96%;" title="14:00 - 9,600 vehicles"></div></div>
+              <div class="traffic-bar-col"><div class="traffic-bar-fill" style="height: 88%;" title="16:00 - 8,800 vehicles"></div></div>
+              <div class="traffic-bar-col"><div class="traffic-bar-fill" style="height: 70%;" title="18:00 - 7,000 vehicles"></div></div>
+              <div class="traffic-bar-col"><div class="traffic-bar-fill" style="height: 76%;" title="20:00 - 7,600 vehicles"></div></div>
+              <div class="traffic-bar-col"><div class="traffic-bar-fill" style="height: 52%;" title="22:00 - 5,200 vehicles"></div></div>
+            </div>
+
+            <div class="traffic-time-axis">
+              <span>00:00</span>
+              <span>06:00</span>
+              <span>12:00</span>
+              <span>18:00</span>
+              <span>23:59</span>
+            </div>
+          </div>
+
+          <!-- Right: Alert Distribution -->
+          <div class="dashboard-card" style="padding:1.35rem 1.5rem;">
+            <div class="card-header-bar" style="margin-bottom:0.5rem;">
+              <span class="card-title">Alert Distribution</span>
+            </div>
+
+            <div class="alert-dist-list">
+              <!-- Item 1 -->
+              <div class="alert-dist-item">
+                <div class="alert-dist-header">
+                  <span class="alert-dist-name">Stolen Vehicle (Watchlist)</span>
+                  <span class="alert-dist-pct">45%</span>
+                </div>
+                <div class="alert-dist-track">
+                  <div class="alert-dist-fill pink" style="width: 45%;"></div>
+                </div>
+              </div>
+
+              <!-- Item 2 -->
+              <div class="alert-dist-item">
+                <div class="alert-dist-header">
+                  <span class="alert-dist-name">Overspeeding</span>
+                  <span class="alert-dist-pct">30%</span>
+                </div>
+                <div class="alert-dist-track">
+                  <div class="alert-dist-fill orange" style="width: 30%;"></div>
+                </div>
+              </div>
+
+              <!-- Item 3 -->
+              <div class="alert-dist-item">
+                <div class="alert-dist-header">
+                  <span class="alert-dist-name">Loitering / Intrusion</span>
+                  <span class="alert-dist-pct">15%</span>
+                </div>
+                <div class="alert-dist-track">
+                  <div class="alert-dist-fill yellow" style="width: 15%;"></div>
+                </div>
+              </div>
+
+              <!-- Item 4 -->
+              <div class="alert-dist-item">
+                <div class="alert-dist-header">
+                  <span class="alert-dist-name">Other Detections</span>
+                  <span class="alert-dist-pct">10%</span>
+                </div>
+                <div class="alert-dist-track">
+                  <div class="alert-dist-fill blue" style="width: 10%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Connected Movement Reconstruction & Live Edge Stream -->
+        <div style="display:grid; grid-template-columns: 1.25fr 1fr; gap:1.25rem; margin-top:0.25rem;">
+          <div id="anpr-movement-trail"></div>
+
+          <div class="dashboard-card" style="padding:1.25rem;">
+            <h4 style="font-size:0.95rem; margin-bottom:1rem; color:#fff;">Live Inference Stream (Edge Cameras)</h4>
+            <div id="analytics-detections-feed" style="display:flex; flex-direction:column; gap:0.5rem; max-height:300px; overflow-y:auto;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW 7: GIS MAPS                              -->
+      <!-- ============================================== -->
+      <div class="view-panel" id="view-maps">
+        <div class="page-header-row">
+          <div>
+            <h1 class="page-title">GIS Spatial Command Center</h1>
+            <p class="page-subtitle">Sabarmati River corridor & Ahmedabad Metropolitan CCTV grid</p>
+          </div>
+          <div>
+            <button class="btn btn-secondary" onclick="window.gisMap.focusVehicle()">Focus Suspect Route</button>
+          </div>
+        </div>
+
+        <div class="dashboard-card" style="height:620px; position:relative; overflow:hidden;">
+          <div id="full-gis-map" style="width:100%; height:100%;"></div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW 8: REPORTS & AUDIT TRAIL                 -->
+      <!-- ============================================== -->
+      <div class="view-panel" id="view-reports">
+        <div class="page-header-row">
+          <div>
+            <h1 class="page-title">Audit Reports & System Trail</h1>
+            <p class="page-subtitle">Chain-of-custody logging, operator actions, and executive CSV export</p>
+          </div>
+          <div style="display:flex; gap:0.75rem;">
+            <button class="btn btn-secondary" onclick="window.app.loadAuditLogs()">🔄 Refresh Logs</button>
+            <button class="btn btn-primary" onclick="window.app.exportAuditCSV()">📥 Export Official CSV</button>
+          </div>
+        </div>
+
+        <div class="dashboard-card" style="padding:1.25rem; margin-bottom:1.25rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <h3 style="color:#ffffff; font-size:1rem;">Real-Time Operator Audit Trail</h3>
+            <span style="font-size:0.78rem; color:#10b981;">● Chain-of-Custody Verified</span>
+          </div>
+
+          <table class="mini-table">
+            <thead>
+              <tr>
+                <th>Audit ID</th>
+                <th>Timestamp</th>
+                <th>Officer / User</th>
+                <th>Action Type</th>
+                <th>Category</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="audit-trail-tbody">
+              <!-- Populated dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="dashboard-card" style="padding:1.25rem;">
+          <h4 style="color:#ffffff; margin-bottom:0.5rem; font-size:0.9rem;">System Architecture Compliance Note</h4>
+          <p style="color:var(--text-secondary); line-height:1.5; font-size:0.82rem;">
+            Meets all Gujarat Police Innovation Hackathon 2026 specifications: Heterogeneous CCTV integration (RTSP/ONVIF), distributed edge analytics, WebSocket real-time synchronization, GIS vehicle trail correlation, and tamper-resistant audit trails.
+          </p>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- VIEW 9: SETTINGS & SIMULATOR                  -->
+      <!-- ============================================== -->
+      <div class="view-panel" id="view-settings">
+        <div class="page-header-row">
+          <div>
+            <h1 class="page-title">Simulator & System Settings</h1>
+            <p class="page-subtitle">Inject synthetic events to test edge detection, watchlist correlation, and alerts</p>
+          </div>
+        </div>
+
+        <div class="dashboard-card" style="padding:1.5rem;">
+          <h3 style="color:#ffffff; margin-bottom:1rem;">Interactive Event Simulator</h3>
+          <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom:1.5rem;">
+            Test the end-to-end flow evaluated in the hiring challenge: Camera Ingestion → AI Detection → Watchlist Match → WebSocket Alert Push → GIS Route Reconstruction.
+          </p>
+
+          <div style="display:flex; flex-wrap:wrap; gap:1rem;">
+            <button class="btn btn-primary" onclick="window.app.simulateWatchlistTrigger()">
+              🚨 Inject Watchlist Match (GJ01XX0001 @ C002)
+            </button>
+            <button class="btn btn-secondary" onclick="window.app.simulateToggleCamera()">
+              🔄 Toggle C004 (Highway) Online / Offline
+            </button>
+            <button class="btn btn-secondary" onclick="window.videoEngine.initFeed('feed-c001', 'C001')">
+              🎥 Reload Video Feeds
+            </button>
+            <button class="btn btn-secondary" onclick="window.gisMap.focusVehicle()">
+              📍 Center Map on Vehicle GJ01XX0001
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ============================================== -->
+<!-- MODALS                                         -->
+<!-- ============================================== -->
+
+<!-- 0. AI Tactical Route Intercept Modal -->
+<div class="modal-backdrop" id="tactical-route-modal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3 class="modal-title">🧠 AI Tactical Intercept Prediction</h3>
+      <button class="modal-close-btn" onclick="window.app.closeModal('tactical-route-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:rgba(37,99,235,0.15); border:1px solid #3b82f6; border-radius:8px; padding:0.75rem 1rem; display:flex; align-items:center; justify-content:space-between;">
+        <span style="color:#38bdf8; font-weight:700; font-size:0.85rem;">Target: <span id="tactical-plate">GJ01XX0001</span></span>
+        <span style="color:#10b981; font-size:0.75rem; font-weight:600;" id="tactical-model">Gemini AI Active</span>
+      </div>
+
+      <div style="font-size:0.82rem; color:var(--text-secondary); line-height:1.5;" id="tactical-summary">
+        Suspect vehicle identified moving across Ahmedabad bridge corridors. AI calculated speed: <b>58.4 km/h</b>.
+      </div>
+
+      <div style="background:var(--bg-card); border-radius:8px; padding:0.85rem; border:1px solid var(--border-color);">
+        <h4 style="font-size:0.82rem; color:#f8fafc; margin-bottom:8px;">Predicted Intercept Points</h4>
+        <div id="tactical-intercepts" style="display:flex; flex-direction:column; gap:6px; font-size:0.78rem;">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+
+      <div style="background:rgba(239,68,68,0.1); border-left:4px solid #ef4444; padding:0.75rem; border-radius:4px; font-size:0.78rem; color:#f87171;" id="tactical-action">
+        Recommended Action: Dispatch patrol units to Riverfront South Toll Plaza.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="window.app.closeModal('tactical-route-modal')">Dismiss</button>
+      <button class="btn btn-primary" onclick="window.gisMap.focusVehicle(); window.app.closeModal('tactical-route-modal');">View on Map</button>
+    </div>
+  </div>
+</div>
+
+<!-- 1. Alert Detail & Resolution Modal -->
+<div class="modal-backdrop" id="alert-details-modal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modal-alert-title">Incident Alert Details</h3>
+      <button class="modal-close-btn" onclick="window.app.closeModal('alert-details-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#000; border-radius:8px; padding:8px; border:1px solid #ef4444; display:flex; align-items:center; justify-content:space-between;">
+        <span style="color:#ef4444; font-weight:700; font-size:0.8rem;">🚨 AI MATCH FLAGGED</span>
+        <span style="font-family:monospace; font-size:0.75rem; color:#94a3b8;" id="modal-alert-time">14:21</span>
+      </div>
+
+      <div style="font-size:0.95rem; font-weight:600; color:#fff;" id="modal-alert-desc"></div>
+      <p style="font-size:0.85rem; color:var(--text-secondary);" id="modal-alert-details"></p>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; background:var(--bg-card); padding:0.85rem; border-radius:6px; font-size:0.8rem;">
+        <div><b>Camera:</b> <span id="modal-alert-cam" style="color:#38bdf8;"></span></div>
+        <div><b>Confidence:</b> <span id="modal-alert-conf" style="color:#10b981;"></span></div>
+        <div><b>Target Entity:</b> <span id="modal-alert-entity" style="color:#f59e0b;"></span></div>
+        <div><b>Status:</b> <span id="modal-alert-status" style="color:#ef4444;"></span></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="window.app.closeModal('alert-details-modal')">Close</button>
+      <button class="btn btn-secondary" onclick="window.app.acknowledgeAlert()">Acknowledge</button>
+      <button class="btn btn-primary" onclick="window.app.resolveAlert()">Resolve & Clear</button>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Onboard Camera Modal -->
+<div class="modal-backdrop" id="onboard-camera-modal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3 class="modal-title">Onboard New CCTV Camera Source</h3>
+      <button class="modal-close-btn" onclick="window.app.closeModal('onboard-camera-modal')">&times;</button>
+    </div>
+    <form onsubmit="window.app.submitNewCamera(event)">
+      <div class="modal-body">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+          <div class="form-group">
+            <label class="form-label">Camera ID *</label>
+            <input type="text" id="cam-input-id" class="form-input" placeholder="e.g. C049" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Camera Name *</label>
+            <input type="text" id="cam-input-name" class="form-input" placeholder="e.g. Sabarmati Riverfront North" required>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+          <div class="form-group">
+            <label class="form-label">Department *</label>
+            <select id="cam-input-dept" class="form-select">
+              <option value="Traffic Police">Traffic Police</option>
+              <option value="City Police">City Police</option>
+              <option value="RTO">RTO</option>
+              <option value="Highway Police">Highway Police</option>
+              <option value="Railways">Railways</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Camera Type</label>
+            <select id="cam-input-type" class="form-select">
+              <option value="PTZ">PTZ</option>
+              <option value="Fixed">Fixed</option>
+              <option value="Dome">Dome</option>
+              <option value="ANPR High-Speed">ANPR High-Speed</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 2fr; gap:1rem;">
+          <div class="form-group">
+            <label class="form-label">Protocol</label>
+            <select id="cam-input-protocol" class="form-select">
+              <option value="RTSP">RTSP</option>
+              <option value="ONVIF">ONVIF</option>
+              <option value="WebRTC">WebRTC</option>
+              <option value="HLS">HLS</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Stream Endpoint URL</label>
+            <input type="text" id="cam-input-stream" class="form-input" placeholder="rtsp://edge.ahmedabad.police/live/c049">
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem;">
+          <div class="form-group">
+            <label class="form-label">Latitude</label>
+            <input type="text" id="cam-input-lat" class="form-input" value="23.0380">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Longitude</label>
+            <input type="text" id="cam-input-lng" class="form-input" value="72.5810">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Zone</label>
+            <select id="cam-input-zone" class="form-select">
+              <option value="Central Zone">Central Zone</option>
+              <option value="North Zone">North Zone</option>
+              <option value="South Zone">South Zone</option>
+              <option value="East Zone">East Zone</option>
+              <option value="West Zone">West Zone</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="window.app.closeModal('onboard-camera-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save & Register</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 3. Camera Stream & PTZ Modal -->
+<div class="modal-backdrop" id="camera-stream-modal">
+  <div class="modal-dialog" style="width:720px;">
+    <div class="modal-header">
+      <div>
+        <h3 class="modal-title" id="stream-modal-title">Live Camera Stream</h3>
+        <p style="font-size:0.75rem; color:var(--text-secondary); margin-top:2px;" id="stream-modal-meta"></p>
+      </div>
+      <button class="modal-close-btn" onclick="window.app.closeModal('camera-stream-modal')">&times;</button>
+    </div>
+    <div class="modal-body" style="padding:1rem;">
+      <div style="position:relative; aspect-ratio:16/9; background:#000; border-radius:8px; overflow:hidden;">
+        <canvas id="modal-canvas-stream" style="width:100%; height:100%; object-fit:cover;"></canvas>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.75rem;">
+        <div style="display:flex; gap:0.5rem;">
+          <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="window.app.ptzMove('left')">◀ Pan Left</button>
+          <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="window.app.ptzMove('right')">▶ Pan Right</button>
+          <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="window.app.ptzMove('up')">▲ Tilt Up</button>
+          <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="window.app.ptzMove('down')">▼ Tilt Down</button>
+        </div>
+        <div style="display:flex; gap:0.5rem;">
+          <button class="btn btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="window.app.ptzZoom()">🔍 Zoom +</button>
+          <button class="btn btn-primary" style="padding:4px 8px; font-size:11px;" onclick="window.app.takeSnapshot()">📸 Snapshot</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. Add Watchlist Entry Modal -->
+<div class="modal-backdrop" id="add-watchlist-modal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h3 class="modal-title">Register Watchlist / Wanted Entity</h3>
+      <button class="modal-close-btn" onclick="window.app.closeModal('add-watchlist-modal')">&times;</button>
+    </div>
+    <form onsubmit="window.app.submitNewWatchlist(event)">
+      <div class="modal-body">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+          <div class="form-group">
+            <label class="form-label">Vehicle Plate / Entity ID *</label>
+            <input type="text" id="wl-input-identifier" class="form-input" placeholder="e.g. GJ01AB1234 or PID-904" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category *</label>
+            <select id="wl-input-category" class="form-select">
+              <option value="Blacklisted Vehicle">Blacklisted Vehicle</option>
+              <option value="Stolen Vehicle">Stolen Vehicle</option>
+              <option value="Wanted Person">Wanted Person</option>
+              <option value="Missing Person">Missing Person</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+          <div class="form-group">
+            <label class="form-label">Priority / Severity *</label>
+            <select id="wl-input-severity" class="form-select">
+              <option value="Critical">Critical (Immediate Intercept)</option>
+              <option value="High" selected>High (Priority Alert)</option>
+              <option value="Medium">Medium (General Monitoring)</option>
+              <option value="Low">Low (Advisory Notice)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Registering Department *</label>
+            <select id="wl-input-dept" class="form-select">
+              <option value="Traffic Police">Traffic Police</option>
+              <option value="City Police">City Police</option>
+              <option value="Crime Branch / CID">Crime Branch / CID</option>
+              <option value="RTO Checkpoints">RTO Checkpoints</option>
+              <option value="Highway Police">Highway Police</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Case Description & Special Instructions *</label>
+          <textarea id="wl-input-desc" class="form-input" style="height:70px; resize:none;" placeholder="Vehicle reported stolen from CG Road / Involved in hit & run case..." required></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="window.app.closeModal('add-watchlist-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add to Watchlist DB</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 5. Authentication Modal (Login & Create Account) -->
+<div class="modal-backdrop" id="auth-modal">
+  <div class="modal-dialog" style="width: 500px;">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div class="brand-logo-icon" style="width:28px; height:28px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <div>
+          <h3 class="modal-title" id="auth-modal-title">Surveillance Portal Login</h3>
+          <p style="font-size:0.7rem; color:#10b981; margin-top:1px;">● Central Authentication Active</p>
+        </div>
+      </div>
+      <button class="modal-close-btn" onclick="window.app.closeModal('auth-modal')">&times;</button>
+    </div>
+
+    <!-- Tabs: Sign In / Create Account -->
+    <div style="display:flex; border-bottom:1px solid var(--border-color); background:rgba(0,0,0,0.2);">
+      <button id="tab-btn-signin" class="btn" style="flex:1; border-radius:0; background:transparent; color:#fff; border-bottom:2px solid var(--accent-blue);" onclick="window.app.switchAuthTab('signin')">Sign In</button>
+      <button id="tab-btn-register" class="btn" style="flex:1; border-radius:0; background:transparent; color:var(--text-secondary);" onclick="window.app.switchAuthTab('register')">Create Account</button>
+    </div>
+
+    <!-- TAB 1: Sign In -->
+    <div id="auth-tab-signin" style="padding: 1.25rem;">
+      <form onsubmit="window.app.handleLogin(event)">
+        <div class="form-group" style="margin-bottom:1rem;">
+          <label class="form-label">Username or Email</label>
+          <input type="text" id="login-username" class="form-input" placeholder="e.g. admin or officer_patel" required>
+        </div>
+        <div class="form-group" style="margin-bottom:1.25rem;">
+          <label class="form-label">Password</label>
+          <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:0.75rem;">
+          Sign In to Command Center
+        </button>
+      </form>
+
+      <!-- Quick Demo Logins -->
+      <div style="margin-top:1.25rem; padding-top:1rem; border-top:1px solid var(--border-color);">
+        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:8px;">Quick Demo Officer Accounts:</span>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <button type="button" class="btn btn-secondary" style="font-size:0.75rem; justify-content:space-between;" onclick="window.app.quickFillLogin('admin', 'admin')">
+            <span>👤 <b>Admin Director</b></span>
+            <span style="color:#38bdf8; font-family:monospace;">admin / admin</span>
+          </button>
+          <button type="button" class="btn btn-secondary" style="font-size:0.75rem; justify-content:space-between;" onclick="window.app.quickFillLogin('officer_patel', 'password123')">
+            <span>👮 <b>Officer Patel (Traffic)</b></span>
+            <span style="color:#38bdf8; font-family:monospace;">officer_patel / password123</span>
+          </button>
+          <button type="button" class="btn btn-secondary" style="font-size:0.75rem; justify-content:space-between;" onclick="window.app.quickFillLogin('inspector_sharma', 'password123')">
+            <span>🛡️ <b>Inspector Sharma (RTO)</b></span>
+            <span style="color:#38bdf8; font-family:monospace;">inspector_sharma / password123</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: Create Account (Register) -->
+    <div id="auth-tab-register" style="padding: 1.25rem; display:none;">
+      <form onsubmit="window.app.handleRegister(event)">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+          <div class="form-group">
+            <label class="form-label">First Name *</label>
+            <input type="text" id="reg-fname" class="form-input" placeholder="Rajesh" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name *</label>
+            <input type="text" id="reg-lname" class="form-input" placeholder="Patel" required>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+          <div class="form-group">
+            <label class="form-label">Username *</label>
+            <input type="text" id="reg-username" class="form-input" placeholder="officer_rajesh" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Official Email *</label>
+            <input type="email" id="reg-email" class="form-input" placeholder="rajesh@police.gujarat.gov.in" required>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:0.75rem;">
+          <div class="form-group">
+            <label class="form-label">Department *</label>
+            <select id="reg-dept" class="form-select">
+              <option value="Traffic Police">Traffic Police</option>
+              <option value="City Police">City Police</option>
+              <option value="RTO">RTO Checkpoints</option>
+              <option value="Highway Police">Highway Police</option>
+              <option value="Railways">Railway Police (RPF)</option>
+              <option value="CID">Crime Branch / CID</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Badge Number *</label>
+            <input type="text" id="reg-badge" class="form-input" placeholder="GJ-TP-4091" required>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:1rem;">
+          <label class="form-label">Password *</label>
+          <input type="password" id="reg-password" class="form-input" placeholder="Minimum 4 characters" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; padding:0.75rem;">
+          Create Account & Register
+        </button>
+      </form>
+    </div>
+
+    <div class="modal-footer" style="justify-content:center; font-size:0.75rem; color:var(--text-muted);">
+      <span>okDriver Central Identity & Access Management</span>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Leaflet GIS Map Library -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<!-- App Scripts -->
+<script src="js/video.js"></script>
+<script src="js/map.js"></script>
+<script src="js/websocket.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

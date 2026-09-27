@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL Database with PostGIS
+  db:
+    image: postgres:15-alpine
+    container_name: okdriver-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: okdriver_admin
+      POSTGRES_PASSWORD: okdriver_secure_password
+      POSTGRES_DB: okdriver_cctv
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - okdriver-net
+
+  # 2. Redis for Pub/Sub Event Bus and Caching
+  redis:
+    image: redis:7-alpine
+    container_name: okdriver-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    networks:
+      - okdriver-net
+
+  # 3. Main Application Server (REST API, WebSocket, Video Server)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: okdriver-app
+    restart: always
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgres://okdriver_admin:okdriver_secure_password@db:5432/okdriver_cctv
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - redis
+    networks:
+      - okdriver-net
+
+networks:
+  okdriver-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  redisdata:

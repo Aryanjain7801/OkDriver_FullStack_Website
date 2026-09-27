@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>okDriver - Surveillance Command Portal Authentication</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body {
+      background: radial-gradient(circle at 50% 20%, #132240 0%, #080d1a 70%, #04070f 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      overflow-y: auto;
+    }
+
+    .auth-page-wrapper {
+      width: 100%;
+      max-width: 520px;
+      margin: auto;
+    }
+
+    .auth-brand-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-bottom: 1.75rem;
+    }
+
+    .auth-brand-logo {
+      width: 54px;
+      height: 54px;
+      background: linear-gradient(135deg, #2563eb, #0ea5e9);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.45);
+      margin-bottom: 0.85rem;
+    }
+
+    .auth-brand-title {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+    }
+
+    .auth-brand-sub {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .auth-card {
+      background: rgba(13, 21, 39, 0.85);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-light);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    }
+
+    .auth-tab-switch {
+      display: flex;
+      background: rgba(8, 13, 26, 0.7);
+      padding: 4px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      margin-bottom: 1.75rem;
+    }
+
+    .auth-tab-btn {
+      flex: 1;
+      padding: 0.65rem;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .auth-tab-btn.active {
+      background: var(--accent-blue);
+      color: #ffffff;
+      box-shadow: 0 4px 12px var(--accent-blue-glow);
+    }
+
+    .auth-form-section {
+      display: none;
+      flex-direction: column;
+      gap: 1.15rem;
+    }
+
+    .auth-form-section.active {
+      display: flex;
+    }
+
+    .auth-footer-note {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .demo-accounts-box {
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .demo-account-chip {
+      background: rgba(18, 30, 56, 0.5);
+      border: 1px solid var(--border-color);
+      padding: 0.55rem 0.85rem;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 6px;
+      font-size: 0.78rem;
+      color: #fff;
+    }
+
+    .demo-account-chip:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-blue);
+    }
+  </style>
+</head>
+<body>
+
+<div class="auth-page-wrapper">
+  <!-- Brand Header -->
+  <div class="auth-brand-header">
+    <div class="auth-brand-logo">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+    </div>
+    <h1 class="auth-brand-title">okDriver</h1>
+    <p class="auth-brand-sub">Integrated CCTV Monitoring & AI Video Analytics Platform</p>
+  </div>
+
+  <!-- Main Authentication Card -->
+  <div class="auth-card">
+    <!-- Tab Switcher: Sign In / Create Account -->
+    <div class="auth-tab-switch">
+      <button class="auth-tab-btn active" id="btn-tab-signin" onclick="switchTab('signin')">Sign In</button>
+      <button class="auth-tab-btn" id="btn-tab-register" onclick="switchTab('register')">Create Account</button>
+    </div>
+
+    <!-- VIEW 1: Sign In -->
+    <form id="form-signin" class="auth-form-section active" onsubmit="handleSignIn(event)">
+      <div class="form-group">
+        <label class="form-label">Officer ID / Username / Email</label>
+        <input type="text" id="login-username" class="form-input" placeholder="e.g. admin or officer_patel" required autocomplete="username">
+      </div>
+
+      <div class="form-group">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label class="form-label">Password</label>
+        </div>
+        <input type="password" id="login-password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="padding:0.75rem; justify-content:center; font-size:0.9rem; margin-top:0.35rem;">
+        Sign In to Command Center
+      </button>
+
+      <!-- Quick Demo Logins -->
+      <div class="demo-accounts-box">
+        <span style="font-size:0.75rem; color:var(--text-muted); display:block; margin-bottom:8px; font-weight:600;">
+          Quick Demo Officer Logins:
+        </span>
+        <div class="demo-account-chip" onclick="fillAndLogin('admin', 'admin')">
+          <span>👤 <b>Admin Director</b> (HQ)</span>
+          <span style="color:#38bdf8; font-family:monospace;">admin / admin</span>
+        </div>
+        <div class="demo-account-chip" onclick="fillAndLogin('officer_patel', 'password123')">
+          <span>👮 <b>Officer Patel</b> (Traffic Police)</span>
+          <span style="color:#38bdf8; font-family:monospace;">officer_patel / password123</span>
+        </div>
+        <div class="demo-account-chip" onclick="fillAndLogin('inspector_sharma', 'password123')">
+          <span>🛡️ <b>Inspector Sharma</b> (RTO)</span>
+          <span style="color:#38bdf8; font-family:monospace;">inspector_sharma / password123</span>
+        </div>
+      </div>
+    </form>
+
+    <!-- VIEW 2: Create Account (Register) -->
+    <form id="form-register" class="auth-form-section" onsubmit="handleRegister(event)">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+        <div class="form-group">
+          <label class="form-label">First Name *</label>
+          <input type="text" id="reg-fname" class="form-input" placeholder="Rajesh" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name *</label>
+          <input type="text" id="reg-lname" class="form-input" placeholder="Patel" required>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.75rem;">
+        <div class="form-group">
+          <label class="form-label">Username *</label>
+          <input type="text" id="reg-username" class="form-input" placeholder="officer_rajesh" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Official Email *</label>
+          <input type="email" id="reg-email" class="form-input" placeholder="rajesh@police.gov.in" required autocomplete="email">
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:0.75rem;">
+        <div class="form-group">
+          <label class="form-label">Department *</label>
+          <select id="reg-dept" class="form-select">
+            <option value="Traffic Police">Traffic Police</option>
+            <option value="City Police">City Police</option>
+            <option value="RTO">RTO Checkpoints</option>
+            <option value="Highway Police">Highway Police</option>
+            <option value="Railways">Railway Police (RPF)</option>
+            <option value="CID">Crime Branch / CID</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Badge Number *</label>
+          <input type="text" id="reg-badge" class="form-input" placeholder="GJ-TP-4091" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password *</label>
+        <input type="password" id="reg-password" class="form-input" placeholder="Minimum 4 characters" required autocomplete="new-password">
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="padding:0.75rem; justify-content:center; font-size:0.9rem; margin-top:0.35rem;">
+        Create Account & Register
+      </button>
+
+      <div style="text-align:center; font-size:0.78rem; color:var(--text-secondary); margin-top:0.5rem;">
+        Already have an account? <a href="#" onclick="switchTab('signin'); return false;" style="color:#38bdf8; text-decoration:none; font-weight:600;">Sign In here</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="auth-footer-note">
+    okDriver Central Identity & Access Management • Security v1.0.0
+  </div>
+</div>
+
+<script>
+  function switchTab(tab) {
+    const btnSignin = document.getElementById('btn-tab-signin');
+    const btnReg = document.getElementById('btn-tab-register');
+    const formSignin = document.getElementById('form-signin');
+    const formReg = document.getElementById('form-register');
+
+    if (tab === 'signin') {
+      btnSignin.classList.add('active');
+      btnReg.classList.remove('active');
+      formSignin.classList.add('active');
+      formReg.classList.remove('active');
+    } else {
+      btnSignin.classList.remove('active');
+      btnReg.classList.add('active');
+      formSignin.classList.remove('active');
+      formReg.classList.add('active');
+    }
+  }
+
+  function fillAndLogin(u, p) {
+    document.getElementById('login-username').value = u;
+    document.getElementById('login-password').value = p;
+    document.getElementById('form-signin').dispatchEvent(new Event('submit'));
+  }
+
+  async function handleSignIn(e) {
+    e.preventDefault();
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value.trim();
+
+    try {
+      const res = await fetch('/api/auth/login/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Invalid credentials. Please try again.');
+        return;
+      }
+
+      localStorage.setItem('okdriver_user', JSON.stringify(data.user));
+      window.location.href = 'index.html';
+    } catch (err) {
+      console.error(err);
+      alert('Authentication server unavailable. Please try again.');
+    }
+  }
+
+  async function handleRegister(e) {
+    e.preventDefault();
+    const first_name = document.getElementById('reg-fname').value.trim();
+    const last_name = document.getElementById('reg-lname').value.trim();
+    const username = document.getElementById('reg-username').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const department = document.getElementById('reg-dept').value;
+    const badge_number = document.getElementById('reg-badge').value.trim();
+    const password = document.getElementById('reg-password').value.trim();
+
+    try {
+      const res = await fetch('/api/auth/register/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name, last_name, username, email, department, badge_number, password, role: 'Officer'
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Registration failed.');
+        return;
+      }
+
+      localStorage.setItem('okdriver_user', JSON.stringify(data.user));
+      alert(`Account created successfully for ${data.user.full_name}! Redirecting to Command Center...`);
+      window.location.href = 'index.html';
+    } catch (err) {
+      console.error(err);
+      alert('Registration server unavailable. Please try again.');
+    }
+  }
+</script>
+
+</body>
+</html>

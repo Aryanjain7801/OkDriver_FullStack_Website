@@ -1,0 +1,7 @@
+node_modules/
+.env
+db.sqlite3
+*.pyc
+__pycache__/
+.DS_Store
+okdriver-cctv-platform-submission.zip
